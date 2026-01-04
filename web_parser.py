@@ -1,17 +1,9 @@
 from bs4 import BeautifulSoup
 
-
 class Stratagem:
     def __init__(self, name: str, arrows: list[str]) -> None:
         self.name: str = name
         self.arrows: list[str] = arrows
-
-    def to_json(self) -> str:
-        s = [f"\"{a}\"" for a in self.arrows]
-        
-
-        return f"{{\"name\":\"{self.name}\",\"arrows\":[{','.join(s)}]}}"
-
 
 
 def parse_content(content: str) -> list[Stratagem]:
@@ -32,6 +24,17 @@ def parse_content(content: str) -> list[Stratagem]:
                 if arrow is None:
                     break;
                 arrow = str(arrow)
+                if arrow.startswith("Stratagem Arrow Down"):
+                    arrow = "Down"
+                elif arrow.startswith("Stratagem Arrow Left"):
+                    arrow = "Left"
+                elif arrow.startswith("Stratagem Arrow Right"):
+                    arrow = "Right"
+                elif arrow.startswith("Stratagem Arrow Up"):
+                    arrow = "Up"
+                else:
+                    raise Exception("Did not recognize arrow type!")
+
                 arrows.append(arrow)
 
             s = Stratagem(name, arrows)
@@ -47,8 +50,17 @@ if __name__ == "__main__":
         content = f.read()
 
     stratagems = parse_content(content)
+    print(f"Found: {len(stratagems)}!")
+    filtered_stratagems = []
+    for s in stratagems:
+        if len(s.name) == 0:
+            continue
+        elif len(s.arrows) == 0:
+            continue
+        filtered_stratagems.append(s)
 
+    # Stratagem::new("Orbital Precision Strike".to_string(), vec![Binding::Right,Binding::Right,Binding::Up]),
     with open('stratagems.json', 'w') as f:
-        s = [s.name + "\n\t" + ','.join(s.arrows) for s in stratagems]
 
-        f.write('\n'.join(s))
+        strats = [f"Stratagem::new(\"{s.name}\".to_string(), vec![{','.join([f"Binding::{k}" for k in s.arrows])}])" for s in filtered_stratagems]
+        f.write(',\n'.join(strats))
